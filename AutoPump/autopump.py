@@ -56,7 +56,7 @@ class AutoPump():
 
 		#if save is activated
 		if saveImages:
-			outputFile = imagesDir + '/{}'.format(datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S"))
+			outputFile = imagesDir + '/{}.bmp'.format(datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S"))
 			logging.info('Saving image to {}'.format(outputFile))
 			img.save(outputFile)
 
@@ -66,7 +66,7 @@ class AutoPump():
 		p = Process(target=self.RunMotor, args=(child_conn,self.breathTime,self.servoMin,self.servoMax))
 		p.start()
 
-		if saveImages:
+		if self.saveImages:
 			if not os.path.exists(self.imagesDir):
 				os.makedirs(self.imagesDir)
 
@@ -91,7 +91,7 @@ class AutoPump():
 		self.sampleRate = 60 #how long to wait in seconds between 
 		self.threshhold = 30 #threshold for ball detection 
 		self.heightToMl = 10 #vertical axis pixel height to mL conversion factor
-		self.saveImages = True
+		self.saveImages = False
 		self.imagesDir = 'imageoutput'
 
 		if not os.path.exists('/var/log/autopump'):
