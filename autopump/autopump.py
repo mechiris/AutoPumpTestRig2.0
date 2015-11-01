@@ -155,7 +155,7 @@ class AutoPump():
 		self.sampleRate = 60 #how long to wait in seconds between 
 		self.threshold = -0.2 #threshold for ball detection 
 		self.heightToMl = list([-2.72607944e-01,   5.61528998e+02])# 10 #vertical axis pixel height to mL conversion factor
-		self.saveImages = True
+		self.saveImages = False
 		self.cylinderROI = [100,480,400,2000]
 		self.imagesDir = 'imageoutput'
 
