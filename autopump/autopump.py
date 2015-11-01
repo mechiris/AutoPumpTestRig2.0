@@ -31,16 +31,16 @@ class AutoPump():
 			pwm.setPWM(0, 0, self.servoMax)
 			time.sleep(self.breathTime)
 			self.breathCounter += 1
-
+			self.child_conn.send(breathcounter)
 			#send breath counter update
-#			self.child_conn.send(breathcounter)
+			
 #		conn.close()
 
 	def measureFluidLevel(self):
 		logging.info('Capturing image')
-                self.captureImage()
-                time.sleep(15) #give image time to write to disk to avoid race condition.  This is sloppy
-                logging.info('Processing vision')
+		self.captureImage()
+		time.sleep(15) #give image time to write to disk to avoid race condition.  This is sloppy
+		logging.info('Processing vision')
 		self.processVision()
 		#if save is activated
 		if self.saveImages:
@@ -59,8 +59,8 @@ class AutoPump():
 
 	def processVision(self):
 		logging.info('Processing machine vision')
-                self.img = scv.Image('/tmp/image.jpg')
-                self.img = self.img.rotate270()
+        self.img = scv.Image('/tmp/image.jpg')
+        self.img = self.img.rotate270()
 		cylinder = self.img.crop(self.cylinderROI) #extents for image 
 		bluechan = cylinder.getNumpy()[:,:,0]
 		bluechan = bluechan.mean(axis=1)
@@ -106,9 +106,9 @@ class AutoPump():
 
 	def start(self):
 
-                self.breathCounter = -1
-                self.ballHeight = -1
-                self.mls = -1
+        self.breathCounter = -1
+        self.ballHeight = -1
+        self.mls = -1
 
 		self.parent_conn, self.child_conn = Pipe()
 		p = Process(target=self.RunMotor)
@@ -119,11 +119,11 @@ class AutoPump():
 				os.makedirs(self.imagesDir)
 
 		while (True):
-			self.processVision()#self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
-			#breathcount = parent_conn.recv()
+			self.measureFluidLevel()#self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
+			bc = self.parent_conn.recv()
 			time.sleep(self.sampleRate)
-                        logging.info('BreathCounter: {}, BallHeight: {}, mls: {}'.format(self.breathCounter,self.ballHeight, self.mls))
-                        print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter, self.ballHeight, self.mls))
+            logging.info('BreathCounter: {}, BallHeight: {}, mls: {}, bc: {}'.format(self.breathCounter,self.ballHeight, self.mls))
+            print('BreathCounter:{}, BallHeight: {}, mls: {}, bc: {}'.format(self.breathCounter, self.ballHeight, self.mls))
 		p.join()
 
 	def generateCalibrationValues(self,imgdir):
