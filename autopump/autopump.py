@@ -1,5 +1,5 @@
 from multiprocessing import Process, Pipe
-#from Adafruit_PWM_Servo_Driver import PWM
+from Adafruit_PWM_Servo_Driver import PWM
 import datetime, time
 import numpy as np
 import subprocess as sbp
@@ -18,7 +18,7 @@ class AutoPump():
 		pulse /= pulseLength
 		pwm.setPWM(channel, 0, pulse)
 
-	def RunMotor(self,conn, breathTime, servoMin, servoMax):
+	def RunMotor(self):
 		#Initialise the PWM device using the default address
 		pwm = PWM(0x40) #for debug: pwm = PWM(0x40, debug=True)
 
@@ -26,18 +26,21 @@ class AutoPump():
 
 		breathcounter = 0
 		while(True):
-			pwm.setPWM(0, 0, servoMin)
-			time.sleep(breathTime)
-			pwm.setPWM(0, 0, servoMax)
-			time.sleep(breathTime)
+			pwm.setPWM(0, 0, self.servoMin)
+			time.sleep(self.breathTime)
+			pwm.setPWM(0, 0, self.servoMax)
+			time.sleep(self.breathTime)
 			breathcounter += 1
 
 			#send breath counter update
-			conn.send(breathcounter)
-		conn.close()
+#			self.child_conn.send(breathcounter)
+#		conn.close()
 
 	def measureFluidLevel(self):
-		self.captureImage()
+		logging.info('Captureimt image')
+                self.captureImage()
+                time.sleep(15) #give image time to write to disk to avoid race condition.  This is sloppy
+                logging.info('Processing vision')
 		self.processVision()
 		#if save is activated
 		if self.saveImages:
@@ -50,14 +53,14 @@ class AutoPump():
 		logging.info('Initializing machine vision')
 		#take a picture 
 		#this goes to disk because the uv4l direct to SCV solution doesn't work on jessie: http://www.linux-projects.org/modules/sections/index.php?op=viewarticle&artid=14
-		sbp.call("raspistill -o image.bmp", shell=True)
-		self.img = scv.Image('image.bmp')
+		sbp.call("raspistill -o /tmp/image.jpg", shell=True)
 		logging.info('Image acquired')
 
 
 	def processVision(self):
 		logging.info('Processing machine vision')
-		self.img = self.img.rotate270()
+                self.img = scv.Image('/tmp/image.jpg')
+                self.img = self.img.rotate270()
 		cylinder = self.img.crop(self.cylinderROI) #extents for image 
 		bluechan = cylinder.getNumpy()[:,:,0]
 		bluechan = bluechan.mean(axis=1)
@@ -82,7 +85,6 @@ class AutoPump():
 		# #compute the mls 
 		# mls = ballheight * heightToMl
 
-
 	def smooth(self, x,window_len=11,window='hanning'):
 	        if x.ndim != 1:
 	                raise ValueError, "smooth only accepts 1 dimension arrays."
@@ -102,8 +104,8 @@ class AutoPump():
 
 	def start(self):
 
-		parent_conn, child_conn = Pipe()
-		p = Process(target=self.RunMotor, args=(child_conn,self.breathTime,self.servoMin,self.servoMax))
+		self.parent_conn, self.child_conn = Pipe()
+		p = Process(target=self.RunMotor)
 		p.start()
 
 		if self.saveImages:
@@ -111,8 +113,8 @@ class AutoPump():
 				os.makedirs(self.imagesDir)
 
 		while (True):
-			self.processVision(self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
-			breathcount = parent_conn.recv()
+			self.processVision()#self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
+			#breathcount = parent_conn.recv()
 			time.sleep(self.sampleRate)
 
 		p.join()
@@ -163,9 +165,9 @@ class AutoPump():
 			os.makedirs('/var/log/autopump')
 		logging.basicConfig(filename='/var/log/autopump/autopump.log',level=logging.INFO)
 
-	if __name__ == '__main__':
+	#if __name__ == '__main__':
 
-		self.start()
+	#	self.start()
 		# parent_conn, child_conn = Pipe()
 		# p = Process(target=RunMotor, args=(child_conn,breathTime,servoMin,servoMax))
 		# p.start()
