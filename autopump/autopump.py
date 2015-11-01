@@ -106,9 +106,9 @@ class AutoPump():
 
 	def start(self):
 
-        self.breathCounter = -1
-        self.ballHeight = -1
-        self.mls = -1
+		self.breathCounter = -1
+		self.ballHeight = -1
+		self.mls = -1
 
 		self.parent_conn, self.child_conn = Pipe()
 		p = Process(target=self.RunMotor)
