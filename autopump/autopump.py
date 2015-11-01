@@ -41,7 +41,7 @@ class AutoPump():
 		self.processVision()
 		#if save is activated
 		if self.saveImages:
-			outputFile = imagesDir + '/{}'.format(datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S"))
+			outputFile = imagesDir + '/{}.jpg'.format(datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S"))
 			logging.info('Saving image to {}'.format(outputFile))
 			self.img.save(outputFile)
 
@@ -106,7 +106,7 @@ class AutoPump():
 		p = Process(target=self.RunMotor, args=(child_conn,self.breathTime,self.servoMin,self.servoMax))
 		p.start()
 
-		if saveImages:
+		if self.saveImages:
 			if not os.path.exists(self.imagesDir):
 				os.makedirs(self.imagesDir)
 
@@ -165,20 +165,21 @@ class AutoPump():
 
 	if __name__ == '__main__':
 
-		parent_conn, child_conn = Pipe()
-		p = Process(target=RunMotor, args=(child_conn,breathTime,servoMin,servoMax))
-		p.start()
+		self.start()
+		# parent_conn, child_conn = Pipe()
+		# p = Process(target=RunMotor, args=(child_conn,breathTime,servoMin,servoMax))
+		# p.start()
 
-		if saveImages:
-			if not os.path.exists(imagesDir):
-				os.makedirs(imagesDir)
+		# if saveImages:
+		# 	if not os.path.exists(imagesDir):
+		# 		os.makedirs(imagesDir)
 
-		while (True):
-			self.processVision()
-			breathcount = parent_conn.recv()
-			time.sleep(self.sampleRate)
+		# while (True):
+		# 	self.processVision()
+		# 	breathcount = parent_conn.recv()
+		# 	time.sleep(self.sampleRate)
 
 			
-		p.join()
+		# p.join()
 
 
