@@ -147,7 +147,7 @@ class AutoPump():
 		self.configFile = 'run_{}.cfg'.format(curtime)
 
 		# Breathing Motion
-		self.servoMin = 375  # Min pulse length out of 4096
+		self.servoMin = 275  # Min pulse length out of 4096
 		self.servoMax = 325  # Max pulse length out of 4096
 		self.breathTime = 0.25 # Time in seconds between inhale/exhale
 
