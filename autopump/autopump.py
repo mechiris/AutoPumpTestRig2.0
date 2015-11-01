@@ -59,8 +59,8 @@ class AutoPump():
 
 	def processVision(self):
 		logging.info('Processing machine vision')
-        self.img = scv.Image('/tmp/image.jpg')
-        self.img = self.img.rotate270()
+		self.img = scv.Image('/tmp/image.jpg')
+		self.img = self.img.rotate270()
 		cylinder = self.img.crop(self.cylinderROI) #extents for image 
 		bluechan = cylinder.getNumpy()[:,:,0]
 		bluechan = bluechan.mean(axis=1)
