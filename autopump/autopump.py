@@ -112,7 +112,7 @@ class AutoPump():
 		self.mls = -1
 
 		self.parent_conn, self.child_conn = Pipe()
-		p = Process(target=self.RunMotor, args=(self.breathCounter))
+		p = Process(target=self.RunMotor, args=(self.breathCounter,))
 		p.start()
 
 		if self.saveImages:
@@ -121,10 +121,10 @@ class AutoPump():
 
 		while (True):
 			self.measureFluidLevel()#self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
-			bc = self.parent_conn.recv()
+			#bc = self.parent_conn.recv()
 			time.sleep(self.sampleRate)
-			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}, bc: {}'.format(self.breathCounter.value,self.ballHeight, self.mls,bc))
-			print('BreathCounter:{}, BallHeight: {}, mls: {}, bc: {}'.format(self.breathCounter.value, self.ballHeight, self.mls,bc))
+			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}'.format(self.breathCounter.value,self.ballHeight, self.mls))
+			print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter.value, self.ballHeight, self.mls))
 		p.join()
 
 	def generateCalibrationValues(self,imgdir):
