@@ -18,21 +18,21 @@ class AutoPump():
 		pulse /= pulseLength
 		pwm.setPWM(channel, 0, pulse)
 
-	def RunMotor(self):
+	def RunMotor(self,counter):
 		#Initialise the PWM device using the default address
 		pwm = PWM(0x40) #for debug: pwm = PWM(0x40, debug=True)
 
 		logging.info('Initializing servo motion')
-                with self.breathCounter.get_lock():
-                        self.breathCounter.value =0
+                with counter.get_lock():
+                        counter.value =0
 		while(True):
 			pwm.setPWM(0, 0, self.servoMin)
 			time.sleep(self.breathTime)
 			pwm.setPWM(0, 0, self.servoMax)
 			time.sleep(self.breathTime)
-                        with self.breathCounter.get_lock():
-                                self.breathCounter.value += 1
-                        self.child_conn.send(self.breathCounter)
+                        with counter.get_lock():
+                                counter.value += 1
+                        #self.child_conn.send(self.breathCounter)
 			#send breath counter update
 			
 #		conn.close()
@@ -112,7 +112,7 @@ class AutoPump():
 		self.mls = -1
 
 		self.parent_conn, self.child_conn = Pipe()
-		p = Process(target=self.RunMotor)
+		p = Process(target=self.RunMotor, args=(self.breathCounter,))
 		p.start()
 
 		if self.saveImages:
@@ -121,10 +121,10 @@ class AutoPump():
 
 		while (True):
 			self.measureFluidLevel()#self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
-			bc = self.parent_conn.recv()
+			#bc = self.parent_conn.recv()
 			time.sleep(self.sampleRate)
-			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}, bc: {}'.format(self.breathCounter.value,self.ballHeight, self.mls,bc))
-			print('BreathCounter:{}, BallHeight: {}, mls: {}, bc: {}'.format(self.breathCounter.value, self.ballHeight, self.mls,bc))
+			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}'.format(self.breathCounter.value,self.ballHeight, self.mls))
+			print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter.value, self.ballHeight, self.mls))
 		p.join()
 
 	def generateCalibrationValues(self,imgdir):
