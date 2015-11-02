@@ -1,4 +1,4 @@
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Pipe, Value
 from Adafruit_PWM_Servo_Driver import PWM
 import datetime, time
 import numpy as np
@@ -23,24 +23,25 @@ class AutoPump():
 		pwm = PWM(0x40) #for debug: pwm = PWM(0x40, debug=True)
 
 		logging.info('Initializing servo motion')
-
-		breathcounter = 0
+                with self.breathCounter.get_lock():
+                        self.breathCounter.value =0
 		while(True):
 			pwm.setPWM(0, 0, self.servoMin)
 			time.sleep(self.breathTime)
 			pwm.setPWM(0, 0, self.servoMax)
 			time.sleep(self.breathTime)
-			breathcounter += 1
-
+                        with self.breathCounter.get_lock():
+                                self.breathCounter.value += 1
+                        self.child_conn.send(self.breathCounter)
 			#send breath counter update
-#			self.child_conn.send(breathcounter)
+			
 #		conn.close()
 
 	def measureFluidLevel(self):
-		logging.info('Captureimt image')
-                self.captureImage()
-                time.sleep(15) #give image time to write to disk to avoid race condition.  This is sloppy
-                logging.info('Processing vision')
+		logging.info('Capturing image')
+		self.captureImage()
+		time.sleep(15) #give image time to write to disk to avoid race condition.  This is sloppy
+		logging.info('Processing vision')
 		self.processVision()
 		#if save is activated
 		if self.saveImages:
@@ -59,8 +60,8 @@ class AutoPump():
 
 	def processVision(self):
 		logging.info('Processing machine vision')
-                self.img = scv.Image('/tmp/image.jpg')
-                self.img = self.img.rotate270()
+		self.img = scv.Image('/tmp/image.jpg')
+		self.img = self.img.rotate270()
 		cylinder = self.img.crop(self.cylinderROI) #extents for image 
 		bluechan = cylinder.getNumpy()[:,:,0]
 		bluechan = bluechan.mean(axis=1)
@@ -72,7 +73,9 @@ class AutoPump():
 			ballheight = -1
 		
 		mls = np.polyval(np.array(self.heightToMl),ballheight)
-		return [ballheight,mls]
+                self.ballHeight = ballheight
+                self.mls = mls
+                return [ballheight,mls]
 
 		# #find the ball
 		# red_channel = self.img.splitChannels()[0]
@@ -104,6 +107,10 @@ class AutoPump():
 
 	def start(self):
 
+		self.breathCounter = Value('d', -1)
+		self.ballHeight = -1
+		self.mls = -1
+
 		self.parent_conn, self.child_conn = Pipe()
 		p = Process(target=self.RunMotor)
 		p.start()
@@ -113,10 +120,11 @@ class AutoPump():
 				os.makedirs(self.imagesDir)
 
 		while (True):
-			self.processVision()#self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
-			#breathcount = parent_conn.recv()
+			self.measureFluidLevel()#self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
+			bc = self.parent_conn.recv()
 			time.sleep(self.sampleRate)
-
+			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}, bc: {}'.format(self.breathCounter.value,self.ballHeight, self.mls,bc))
+			print('BreathCounter:{}, BallHeight: {}, mls: {}, bc: {}'.format(self.breathCounter.value, self.ballHeight, self.mls,bc))
 		p.join()
 
 	def generateCalibrationValues(self,imgdir):
@@ -154,7 +162,7 @@ class AutoPump():
 		self.breathTime = 0.25 # Time in seconds between inhale/exhale
 
 		# Machine Vision
-		self.sampleRate = 60 #how long to wait in seconds between 
+		self.sampleRate = 10 #how long to wait in seconds between 
 		self.threshold = -0.2 #threshold for ball detection 
 		self.heightToMl = list([-2.72607944e-01,   5.61528998e+02])# 10 #vertical axis pixel height to mL conversion factor
 		self.saveImages = False
