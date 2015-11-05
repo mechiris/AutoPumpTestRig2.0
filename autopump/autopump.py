@@ -26,14 +26,16 @@ class AutoPump():
 		logging.info('Initializing servo motion')
                 with counter.get_lock():
                         counter.value =0
-		while(True):
+		while(self.runMotor):
 			pwm.setPWM(0, 0, self.servoMin)
 			time.sleep(self.breathTime)
 			pwm.setPWM(0, 0, self.servoMax)
 			time.sleep(self.breathTime)
                         with counter.get_lock():
                                 counter.value += 1
-			
+		logging.info('Stopping motor')
+		pwm.setPWM(0,0,self.servoSlack)
+
 
 	def measureFluidLevel(self):
 		logging.info('Capturing image')
@@ -111,6 +113,8 @@ class AutoPump():
 			print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter.value, self.ballHeight, self.mls))
 			self.saveData()
 			if self.mls > self.maxFluidLevel:
+				logging.info('Fluid level {} exceeds max fluid level of {}.  Shutting down.'.format(self.mls, self.maxFluidLevel))
+				self.runMotor = False
 				break
 
 		p.join()
@@ -161,6 +165,7 @@ class AutoPump():
 		# Breathing Motion
 		self.servoMin = 275  # Min pulse length out of 4096
 		self.servoMax = 325  # Max pulse length out of 4096
+		self.servoSlack = 400
 		self.breathTime = 0.25 # Time in seconds between inhale/exhale
 
 		# Machine Vision
@@ -179,6 +184,7 @@ class AutoPump():
 		self.breathCounter = Value('d', -1)
 		self.ballHeight = -1
 		self.mls = -1
+		self.runMotor = True
 
 		if not os.path.exists('/var/log/autopump'):
 			os.makedirs('/var/log/autopump')
