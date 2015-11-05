@@ -126,7 +126,7 @@ class AutoPump():
 
 		with open(self.outputFile, 'a') as csvfile:
 			csvwriter = csv.writer(csvfile, delimiter=' ')
-			csvwriter.writerow([self.breathCounter.value,breathTimeHumanHours,self.ballHeight, self.mls,datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")])
+			csvwriter.writerow([self.breathCounter.value,breathTimeHumanHours,self.ballHeight, self.mls, self.baseFluidLevel-self.mls, datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")])
 
 
 	def generateCalibrationValues(self,imgdir):
