@@ -1,5 +1,5 @@
 from multiprocessing import Process, Pipe, Value
-from Adafruit_PWM_Servo_Driver import PWM
+#from Adafruit_PWM_Servo_Driver import PWM
 import datetime, time
 import numpy as np
 import subprocess as sbp
@@ -8,6 +8,7 @@ import logging
 import os
 import glob
 import json
+import csv
 
 class AutoPump():
 	def setServoPulse(self,channel, pulse):
@@ -32,10 +33,7 @@ class AutoPump():
 			time.sleep(self.breathTime)
                         with counter.get_lock():
                                 counter.value += 1
-                        #self.child_conn.send(self.breathCounter)
-			#send breath counter update
 			
-#		conn.close()
 
 	def measureFluidLevel(self):
 		logging.info('Capturing image')
@@ -77,16 +75,6 @@ class AutoPump():
                 self.mls = mls
                 return [ballheight,mls]
 
-		# #find the ball
-		# red_channel = self.img.splitChannels()[0]
-		# blobs = red_channel.findBlobs(threshold)
-		# if blobs and len(blobs)>0:
-		# 	ballheight = blobs[0].y
-		# else:
-		# 	logging.warning('Machine vision failure: ball not detected')
-		# 	ballheight = -1 
-		# #compute the mls 
-		# mls = ballheight * heightToMl
 
 	def smooth(self, x,window_len=11,window='hanning'):
 	        if x.ndim != 1:
@@ -107,10 +95,6 @@ class AutoPump():
 
 	def start(self):
 
-		self.breathCounter = Value('d', -1)
-		self.ballHeight = -1
-		self.mls = -1
-
 		self.parent_conn, self.child_conn = Pipe()
 		p = Process(target=self.RunMotor, args=(self.breathCounter,))
 		p.start()
@@ -126,6 +110,19 @@ class AutoPump():
 			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}'.format(self.breathCounter.value,self.ballHeight, self.mls))
 			print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter.value, self.ballHeight, self.mls))
 		p.join()
+
+	def saveData(self):
+		if not os.path.isfile(self.outputFile):
+			with open(self.configFile, 'wb') as csvfile:
+				csvwriter = csv.writer(csvfile, delimiter=' ')
+				csvwriter.writerow(['breathCounter','breathTimeHumanHours','ballHeight','mlsPumped','timestamp'])
+
+		breathTimeHumanHours = self.breathCounter.value / ( self.humanBPM * 60 ) #breathing time in hours
+
+		with open(self.outputFile, 'a') as csvfile:
+			csvwriter = csv.writer(csvfile, delimiter=' ')
+			csvwriter.writerow([self.breathCounter.value,breathTimeHumanHours,self.ballHeight, self.mls,datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")])
+
 
 	def generateCalibrationValues(self,imgdir):
 	    #returns calibration curve from an image directory.  Assumes imgs are named XXml.jpg where XX is the volumne in ml
@@ -168,6 +165,14 @@ class AutoPump():
 		self.saveImages = False
 		self.cylinderROI = [100,480,400,2000]
 		self.imagesDir = 'imageoutput'
+
+		# Breath Normalization Parameters
+		self.humanBPM = 15 # for doing testrig to in-vivo calculation
+
+		### init holding variables
+		self.breathCounter = Value('d', -1)
+		self.ballHeight = -1
+		self.mls = -1
 
 		if not os.path.exists('/var/log/autopump'):
 			os.makedirs('/var/log/autopump')
