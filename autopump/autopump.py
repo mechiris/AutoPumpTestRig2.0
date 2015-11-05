@@ -109,6 +109,7 @@ class AutoPump():
 			time.sleep(self.sampleRate)
 			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}'.format(self.breathCounter.value,self.ballHeight, self.mls))
 			print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter.value, self.ballHeight, self.mls))
+			saveData()
 		p.join()
 
 	def saveData(self):
@@ -116,6 +117,7 @@ class AutoPump():
 			with open(self.configFile, 'wb') as csvfile:
 				csvwriter = csv.writer(csvfile, delimiter=' ')
 				csvwriter.writerow(['breathCounter','breathTimeHumanHours','ballHeight','mlsPumped','timestamp'])
+				self.baseFluidLevel = copy.copy(self.mls)
 
 		breathTimeHumanHours = self.breathCounter.value / ( self.humanBPM * 60 ) #breathing time in hours
 
