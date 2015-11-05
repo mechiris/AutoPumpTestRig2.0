@@ -19,21 +19,21 @@ class AutoPump():
 		pulse /= pulseLength
 		pwm.setPWM(channel, 0, pulse)
 
-	def RunMotor(self,counter):
+	def RunMotor(self,counter, runMotor):
 		#Initialise the PWM device using the default address
 		pwm = PWM(0x40) #for debug: pwm = PWM(0x40, debug=True)
 
 		logging.info('Initializing servo motion')
                 with counter.get_lock():
                         counter.value =0
-		while(self.runMotor):
+		while(runMotor.value):
 			pwm.setPWM(0, 0, self.servoMin)
 			time.sleep(self.breathTime)
 			pwm.setPWM(0, 0, self.servoMax)
 			time.sleep(self.breathTime)
                         with counter.get_lock():
                                 counter.value += 1
-		logging.info('Stopping motor')
+                logging.info('Stopping motor')
 		pwm.setPWM(0,0,self.servoSlack)
 
 
@@ -98,7 +98,7 @@ class AutoPump():
 	def start(self):
 
 		self.parent_conn, self.child_conn = Pipe()
-		p = Process(target=self.RunMotor, args=(self.breathCounter,))
+		p = Process(target=self.RunMotor, args=(self.breathCounter,self.motor))
 		p.start()
 
 		if self.saveImages:
@@ -114,10 +114,13 @@ class AutoPump():
 			self.saveData()
 			if self.mls > self.maxFluidLevel:
 				logging.info('Fluid level {} exceeds max fluid level of {}.  Shutting down.'.format(self.mls, self.maxFluidLevel))
-				self.runMotor = False
+				self.motor.value = 0
 				break
 
 		p.join()
+                logging.info('Run: {} completed'.format(self.outputFile))
+                print('Run: {} completed'.format(self.outputFile))
+
 
 	def saveData(self):
 		if not os.path.isfile(self.outputFile):
@@ -175,7 +178,7 @@ class AutoPump():
 		self.saveImages = False
 		self.cylinderROI = [100,480,400,2000]
 		self.imagesDir = 'imageoutput'
-		self.maxFluidLevel = 550 #if we exceed this in MLs, shut things down.
+		self.maxFluidLevel = 50 #if we exceed this in MLs, shut things down.
 
 		# Breath Normalization Parameters
 		self.humanBPM = 15 # for doing testrig to in-vivo calculation
@@ -184,7 +187,7 @@ class AutoPump():
 		self.breathCounter = Value('d', -1)
 		self.ballHeight = -1
 		self.mls = -1
-		self.runMotor = True
+		self.motor = Value('d',1)
 
 		if not os.path.exists('/var/log/autopump'):
 			os.makedirs('/var/log/autopump')
