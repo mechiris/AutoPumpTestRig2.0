@@ -178,7 +178,7 @@ class AutoPump():
 		self.saveImages = False
 		self.cylinderROI = [100,480,400,2000]
 		self.imagesDir = 'imageoutput'
-		self.maxFluidLevel = 50 #if we exceed this in MLs, shut things down.
+		self.maxFluidLevel = 500 #if we exceed this in MLs, shut things down.
 
 		# Breath Normalization Parameters
 		self.humanBPM = 15 # for doing testrig to in-vivo calculation
