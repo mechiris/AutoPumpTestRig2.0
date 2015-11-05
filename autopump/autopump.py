@@ -124,7 +124,7 @@ class AutoPump():
 			with open(self.configFile, 'wb') as csvfile:
 				csvwriter = csv.writer(csvfile, delimiter=' ')
 				csvwriter.writerow(['breathCounter','breathTimeHumanHours','ballHeight','mlsTotal','mlsPumped','timestamp'])
-				self.baseFluidLevel = copy.copy(self.mls)
+				self.baseFluidLevel = self.mls
 
 		breathTimeHumanHours = self.breathCounter.value / ( self.humanBPM * 60 ) #breathing time in hours
 
