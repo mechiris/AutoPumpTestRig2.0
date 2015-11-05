@@ -110,13 +110,16 @@ class AutoPump():
 			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}'.format(self.breathCounter.value,self.ballHeight, self.mls))
 			print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter.value, self.ballHeight, self.mls))
 			saveData()
+			if self.mls > self.maxFluidLevel:
+				break
+
 		p.join()
 
 	def saveData(self):
 		if not os.path.isfile(self.outputFile):
 			with open(self.configFile, 'wb') as csvfile:
 				csvwriter = csv.writer(csvfile, delimiter=' ')
-				csvwriter.writerow(['breathCounter','breathTimeHumanHours','ballHeight','mlsPumped','timestamp'])
+				csvwriter.writerow(['breathCounter','breathTimeHumanHours','ballHeight','mlsTotal','mlsPumped','timestamp'])
 				self.baseFluidLevel = copy.copy(self.mls)
 
 		breathTimeHumanHours = self.breathCounter.value / ( self.humanBPM * 60 ) #breathing time in hours
@@ -167,6 +170,7 @@ class AutoPump():
 		self.saveImages = False
 		self.cylinderROI = [100,480,400,2000]
 		self.imagesDir = 'imageoutput'
+		self.maxFluidLevel = 550 #if we exceed this in MLs, shut things down.
 
 		# Breath Normalization Parameters
 		self.humanBPM = 15 # for doing testrig to in-vivo calculation
