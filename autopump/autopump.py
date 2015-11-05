@@ -109,7 +109,7 @@ class AutoPump():
 			time.sleep(self.sampleRate)
 			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}'.format(self.breathCounter.value,self.ballHeight, self.mls))
 			print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter.value, self.ballHeight, self.mls))
-			saveData()
+			self.saveData()
 			if self.mls > self.maxFluidLevel:
 				break
 
