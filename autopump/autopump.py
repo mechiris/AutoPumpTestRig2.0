@@ -9,6 +9,7 @@ import os
 import glob
 import json
 import csv
+import copy 
 
 class AutoPump():
 	def setServoPulse(self,channel, pulse):
@@ -124,10 +125,11 @@ class AutoPump():
 
 	def saveData(self):
 		if not os.path.isfile(self.outputFile):
-			with open(self.configFile, 'wb') as csvfile:
+			with open(self.outputFile, 'wb') as csvfile:
 				csvwriter = csv.writer(csvfile, delimiter=' ')
 				csvwriter.writerow(['breathCounter','breathTimeHumanHours','ballHeight','mlsTotal','mlsPumped','timestamp'])
-				self.baseFluidLevel = self.mls
+				self.saveConfig()
+                                self.baseFluidLevel = self.mls
 
 		breathTimeHumanHours = self.breathCounter.value / ( self.humanBPM * 60 ) #breathing time in hours
 
@@ -155,8 +157,15 @@ class AutoPump():
 		return fit
 
 	def saveConfig(self):
-		with open(self.configFile, 'w') as f:
-		    json.dump(self.__dict__,f)
+            outjson = copy.copy(self.__dict__)
+            badkeys = ['motor','parent_conn','child_conn','img']
+            for var in badkeys:
+                del outjson[var]
+            outjson['breathCounter'] = outjson['breathCounter'].value
+            with open(self.configFile, 'w') as f:
+                json.dump(outjson,f)
+
+
 
 
 	def __init__(self):
@@ -178,7 +187,7 @@ class AutoPump():
 		self.saveImages = False
 		self.cylinderROI = [150,850,350,2000]
 		self.imagesDir = 'imageoutput'
-		self.maxFluidLevel = 500 #if we exceed this in MLs, shut things down.
+		self.maxFluidLevel = 450 #if we exceed this in MLs, shut things down.
 
 		# Breath Normalization Parameters
 		self.humanBPM = 15 # for doing testrig to in-vivo calculation
