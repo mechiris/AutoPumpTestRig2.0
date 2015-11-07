@@ -58,9 +58,9 @@ class AutoPump():
 		logging.info('Image acquired')
 
 
-	def processVision(self):
+	def processVision(self, imgfile='/tmp/image.jpg'):
 		logging.info('Processing machine vision')
-		self.img = scv.Image('/tmp/image.jpg')
+		self.img = scv.Image(imgfile)
 		self.img = self.img.rotate270()
 		cylinder = self.img.crop(self.cylinderROI) #extents for image 
 		bluechan = cylinder.getNumpy()[:,:,0]
@@ -173,10 +173,10 @@ class AutoPump():
 
 		# Machine Vision
 		self.sampleRate = 10 #how long to wait in seconds between 
-		self.threshold = -0.2 #threshold for ball detection 
-		self.heightToMl = list([-2.72607944e-01,   5.61528998e+02])# 10 #vertical axis pixel height to mL conversion factor
+		self.threshold = -0.25 #threshold for ball detection 
+		self.heightToMl = list([ -2.56861600e-01,   4.55618036e+02])# 10 #vertical axis pixel height to mL conversion factor
 		self.saveImages = False
-		self.cylinderROI = [100,480,400,2000]
+		self.cylinderROI = [150,850,350,2000]
 		self.imagesDir = 'imageoutput'
 		self.maxFluidLevel = 500 #if we exceed this in MLs, shut things down.
 
