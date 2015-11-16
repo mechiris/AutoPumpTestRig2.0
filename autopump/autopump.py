@@ -1,5 +1,6 @@
 from multiprocessing import Process, Pipe, Value
 from Adafruit_PWM_Servo_Driver import PWM
+import RPi.GPIO as GPIO
 import datetime, time
 import numpy as np
 import subprocess as sbp
@@ -96,6 +97,9 @@ class AutoPump():
 	        y=np.convolve(w/w.sum(),s,mode='same')
 	        return y[window_len:-window_len+1]
 
+    def voidPumpingChamber(self):
+
+
 	def start(self):
 
 		self.parent_conn, self.child_conn = Pipe()
@@ -106,21 +110,34 @@ class AutoPump():
 			if not os.path.exists(self.imagesDir):
 				os.makedirs(self.imagesDir)
 
-		while (True):
-			self.measureFluidLevel()#self.threshhold, self.heightToMl, self.saveImages, self.imagesDir)
-			#bc = self.parent_conn.recv()
+		while self.runCounter != 0:
+			self.processSingleRun()
+
+			# reset for the next run
+			self.breathCounter = Value('d', -1)
+			self.initializeRunVariables()
+
+			if self.runCounter > 0:
+				self.runCounter -= 1
+
+
+		self.motor.value = 0
+		p.join()
+        print('Run: {} completed'.format(self.outputFile))
+
+
+    def processSingleRun(self):
+    	while (True):
+			self.measureFluidLevel()
+
 			time.sleep(self.sampleRate)
 			logging.info('BreathCounter: {}, BallHeight: {}, mls: {}'.format(self.breathCounter.value,self.ballHeight, self.mls))
 			print('BreathCounter:{}, BallHeight: {}, mls: {}'.format(self.breathCounter.value, self.ballHeight, self.mls))
 			self.saveData()
 			if self.mls > self.maxFluidLevel:
 				logging.info('Fluid level {} exceeds max fluid level of {}.  Shutting down.'.format(self.mls, self.maxFluidLevel))
-				self.motor.value = 0
 				break
-
-		p.join()
-                logging.info('Run: {} completed'.format(self.outputFile))
-                print('Run: {} completed'.format(self.outputFile))
+        logging.info('Run: {} completed'.format(self.outputFile))
 
 
 	def saveData(self):
@@ -158,6 +175,7 @@ class AutoPump():
 
 	def saveConfig(self):
             outjson = copy.copy(self.__dict__)
+            #prune non-native types from configuration json dump
             badkeys = ['motor','parent_conn','child_conn','img']
             for var in badkeys:
                 del outjson[var]
@@ -165,15 +183,30 @@ class AutoPump():
             with open(self.configFile, 'w') as f:
                 json.dump(outjson,f)
 
+    def runReturnPump(self):
+    	logging.info('Running return motor for {} seconds'.format(self.returnPumpTime))
+		GPIO.output(self.returnMotorPin,GPIO.HIGH)
+		time.sleep(self.returnPumpTime)
+		GPIO.output(self.returnMotorPin,GPIO.LOW)
+		logging.info('Return motor complete')
 
 
 
-	def __init__(self):
-		### Configureable parameters ###
-		curtime = datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")
+    def initializeRunVariables(self):
+    	#
+    	curtime = datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")
 		self.outputFile = 'run_{}.csv'.format(curtime)
 		self.configFile = 'run_{}.cfg'.format(curtime)
 
+		### init holding variables
+		self.breathCounter = Value('d', -1)
+		self.ballHeight = -1
+		self.mls = -1
+		self.motor = Value('d',1)
+		self.runCounter = -1
+
+	def __init__(self):
+		### Configureable parameters ###
 		# Breathing Motion
 		self.servoMin = 275  # Min pulse length out of 4096
 		self.servoMax = 325  # Max pulse length out of 4096
@@ -181,44 +214,27 @@ class AutoPump():
 		self.breathTime = 0.25 # Time in seconds between inhale/exhale
 
 		# Machine Vision
-		self.sampleRate = 10 #how long to wait in seconds between 
-		self.threshold = -0.25 #threshold for ball detection 
-		self.heightToMl = list([ -2.56861600e-01,   4.55618036e+02])# 10 #vertical axis pixel height to mL conversion factor
+		self.sampleRate = 10 # How long to wait in seconds between 
+		self.threshold = -0.25 # Threshold for ball detection 
+		self.heightToMl = list([ -2.56861600e-01,   4.55618036e+02]) # Vertical axis pixel height to mL conversion factor
 		self.saveImages = False
 		self.cylinderROI = [150,850,350,2000]
 		self.imagesDir = 'imageoutput'
-		self.maxFluidLevel = 450 #if we exceed this in MLs, shut things down.
+		self.maxFluidLevel = 450 # If we exceed this in MLs, shut things down.
 
 		# Breath Normalization Parameters
-		self.humanBPM = 15 # for doing testrig to in-vivo calculation
+		self.humanBPM = 15 # For doing testrig to in-vivo calculation
 
-		### init holding variables
-		self.breathCounter = Value('d', -1)
-		self.ballHeight = -1
-		self.mls = -1
-		self.motor = Value('d',1)
+		# Return motor
+		self.returnMotorPin = 17 # Raspberry pi pin to trigger mosfet relay to run the return pump
+		self.returnPumpTime = 60 # Time in seconds to run the return motor to void the cylinder
+
+		#### Initialize system
+		GPIO.setmode(GPIO.BOARD)
+		GPIO.setup(returnMotorPin, GPIO.OUT)
+		self.initializeRunVariables()
 
 		if not os.path.exists('/var/log/autopump'):
 			os.makedirs('/var/log/autopump')
 		logging.basicConfig(filename='/var/log/autopump/autopump.log',level=logging.INFO)
-
-	#if __name__ == '__main__':
-
-	#	self.start()
-		# parent_conn, child_conn = Pipe()
-		# p = Process(target=RunMotor, args=(child_conn,breathTime,servoMin,servoMax))
-		# p.start()
-
-		# if saveImages:
-		# 	if not os.path.exists(imagesDir):
-		# 		os.makedirs(imagesDir)
-
-		# while (True):
-		# 	self.processVision()
-		# 	breathcount = parent_conn.recv()
-		# 	time.sleep(self.sampleRate)
-
-			
-		# p.join()
-
 
