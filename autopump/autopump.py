@@ -98,6 +98,9 @@ class AutoPump():
 	        return y[window_len:-window_len+1]
 
     def voidPumpingChamber(self):
+        GPIO.output(self.returnMotorPin,GPIO.HIGH)
+        time.sleep(self.returnPumpTime)
+        GOIP.output(self.returnMotorPin,GPIO.LOW)
 
 
 	def start(self):
