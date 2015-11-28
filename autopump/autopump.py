@@ -97,10 +97,10 @@ class AutoPump():
 	        y=np.convolve(w/w.sum(),s,mode='same')
 	        return y[window_len:-window_len+1]
 
-    def voidPumpingChamber(self):
-        GPIO.output(self.returnMotorPin,GPIO.HIGH)
-        time.sleep(self.returnPumpTime)
-        GOIP.output(self.returnMotorPin,GPIO.LOW)
+	def voidPumpingChamber(self):
+		GPIO.output(self.returnMotorPin,GPIO.HIGH)
+		time.sleep(self.returnPumpTime)
+		GOIP.output(self.returnMotorPin,GPIO.LOW)
 
 
 	def start(self):
@@ -129,8 +129,8 @@ class AutoPump():
         print('Run: {} completed'.format(self.outputFile))
 
 
-    def processSingleRun(self):
-    	while (True):
+	def processSingleRun(self):
+		while (True):
 			self.measureFluidLevel()
 
 			time.sleep(self.sampleRate)
@@ -186,8 +186,8 @@ class AutoPump():
             with open(self.configFile, 'w') as f:
                 json.dump(outjson,f)
 
-    def runReturnPump(self):
-    	logging.info('Running return motor for {} seconds'.format(self.returnPumpTime))
+	def runReturnPump(self):
+		logging.info('Running return motor for {} seconds'.format(self.returnPumpTime))
 		GPIO.output(self.returnMotorPin,GPIO.HIGH)
 		time.sleep(self.returnPumpTime)
 		GPIO.output(self.returnMotorPin,GPIO.LOW)
@@ -195,9 +195,9 @@ class AutoPump():
 
 
 
-    def initializeRunVariables(self):
-    	#
-    	curtime = datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")
+	def initializeRunVariables(self):
+		#
+		curtime = datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")
 		self.outputFile = 'run_{}.csv'.format(curtime)
 		self.configFile = 'run_{}.cfg'.format(curtime)
 
