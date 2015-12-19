@@ -98,10 +98,11 @@ class AutoPump():
 	        return y[window_len:-window_len+1]
 
 	def voidPumpingChamber(self):
-		GPIO.output(self.returnMotorPin,GPIO.HIGH)
+		logging.info('Return pump firing for {} seconds.'.format(self.returnPumpTime))
+                GPIO.output(self.returnMotorPin,GPIO.HIGH)
 		time.sleep(self.returnPumpTime)
-		GOIP.output(self.returnMotorPin,GPIO.LOW)
-
+		GPIO.output(self.returnMotorPin,GPIO.LOW)
+                logging.info('Return pump complete.')
 
 	def start(self):
 
@@ -119,18 +120,19 @@ class AutoPump():
 			# reset for the next run
 			self.breathCounter = Value('d', -1)
 			self.initializeRunVariables()
-
+                        self.voidPumpingChamber()
 			if self.runCounter > 0:
 				self.runCounter -= 1
 
 
 		self.motor.value = 0
 		p.join()
-        print('Run: {} completed'.format(self.outputFile))
+                print('Run: {} completed'.format(self.outputFile))
 
 
 	def processSingleRun(self):
-		while (True):
+            logging.info('Run: {} initializing'.format(self.outputFile))
+            while (True):
 			self.measureFluidLevel()
 
 			time.sleep(self.sampleRate)
@@ -140,7 +142,7 @@ class AutoPump():
 			if self.mls > self.maxFluidLevel:
 				logging.info('Fluid level {} exceeds max fluid level of {}.  Shutting down.'.format(self.mls, self.maxFluidLevel))
 				break
-        logging.info('Run: {} completed'.format(self.outputFile))
+            logging.info('Run: {} completed'.format(self.outputFile))
 
 
 	def saveData(self):
@@ -212,7 +214,7 @@ class AutoPump():
 		### Configureable parameters ###
 		# Breathing Motion
 		self.servoMin = 275  # Min pulse length out of 4096
-		self.servoMax = 325  # Max pulse length out of 4096
+		self.servoMax = 225  #325  # Max pulse length out of 4096
 		self.servoSlack = 400
 		self.breathTime = 0.25 # Time in seconds between inhale/exhale
 
@@ -230,12 +232,13 @@ class AutoPump():
 
 		# Return motor
 		self.returnMotorPin = 17 # Raspberry pi pin to trigger mosfet relay to run the return pump
-		self.returnPumpTime = 60 # Time in seconds to run the return motor to void the cylinder
+		self.returnPumpTime = 11*60 # Time in seconds to run the return motor to void the cylinder
 
 		#### Initialize system
-		GPIO.setmode(GPIO.BOARD)
-		GPIO.setup(returnMotorPin, GPIO.OUT)
-		self.initializeRunVariables()
+		GPIO.setmode(GPIO.BCM)
+		GPIO.setup(self.returnMotorPin, GPIO.OUT)
+                GPIO.output(self.returnMotorPin,GPIO.LOW)
+                self.initializeRunVariables()
 
 		if not os.path.exists('/var/log/autopump'):
 			os.makedirs('/var/log/autopump')
