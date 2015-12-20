@@ -1,6 +1,6 @@
 from multiprocessing import Process, Pipe, Value
-#from Adafruit_PWM_Servo_Driver import PWM
-#import RPi.GPIO as GPIO
+from Adafruit_PWM_Servo_Driver import PWM
+import RPi.GPIO as GPIO
 import datetime, time
 import numpy as np
 import subprocess as sbp
@@ -190,9 +190,9 @@ class AutoPump():
 
 	def runReturnPump(self):
 		logging.info('Running return motor for {} seconds'.format(self.returnPumpTime))
-#		GPIO.output(self.returnMotorPin,GPIO.HIGH)
+		GPIO.output(self.returnMotorPin,GPIO.HIGH)
 		time.sleep(self.returnPumpTime)
-#		GPIO.output(self.returnMotorPin,GPIO.LOW)
+		GPIO.output(self.returnMotorPin,GPIO.LOW)
 		logging.info('Return motor complete')
 
 
@@ -235,10 +235,10 @@ class AutoPump():
 		self.returnPumpTime = 11*60 # Time in seconds to run the return motor to void the cylinder
 
 		#### Initialize system
-#		GPIO.setmode(GPIO.BCM)#
-#		GPIO.setup(self.returnMotorPin, GPIO.OUT)
-      #          GPIO.output(self.returnMotorPin,GPIO.LOW)
-                self.initializeRunVariables()
+		GPIO.setmode(GPIO.BCM)#
+		GPIO.setup(self.returnMotorPin, GPIO.OUT)
+		GPIO.output(self.returnMotorPin,GPIO.LOW)
+		self.initializeRunVariables()
 
 		if not os.path.exists('/var/log/autopump'):
 			os.makedirs('/var/log/autopump')
