@@ -1,6 +1,6 @@
 from multiprocessing import Process, Pipe, Value
-from Adafruit_PWM_Servo_Driver import PWM
-import RPi.GPIO as GPIO
+#from Adafruit_PWM_Servo_Driver import PWM
+#import RPi.GPIO as GPIO
 import datetime, time
 import numpy as np
 import subprocess as sbp
@@ -69,7 +69,7 @@ class AutoPump():
 		bluechan = bluechan.mean(axis=1)
 		smoothb = self.smooth(bluechan,window_len=50)
 		try:
-			ballheight = np.nonzero(np.diff(smoothb) < self.threshold)[0][0] #get first y value that exceeds thrshold 
+			ballheight = np.nonzero(np.diff(np.diff(smoothb)) < self.threshold)[0][0] #get first y value that exceeds thrshold 
 		except:
 			logging.warning('Machine vision failure: ball not detected')
 			ballheight = -1
@@ -190,9 +190,9 @@ class AutoPump():
 
 	def runReturnPump(self):
 		logging.info('Running return motor for {} seconds'.format(self.returnPumpTime))
-		GPIO.output(self.returnMotorPin,GPIO.HIGH)
+#		GPIO.output(self.returnMotorPin,GPIO.HIGH)
 		time.sleep(self.returnPumpTime)
-		GPIO.output(self.returnMotorPin,GPIO.LOW)
+#		GPIO.output(self.returnMotorPin,GPIO.LOW)
 		logging.info('Return motor complete')
 
 
@@ -220,10 +220,10 @@ class AutoPump():
 
 		# Machine Vision
 		self.sampleRate = 10 # How long to wait in seconds between 
-		self.threshold = -0.25 # Threshold for ball detection 
-		self.heightToMl = list([ -2.56861600e-01,   4.55618036e+02]) # Vertical axis pixel height to mL conversion factor
+		self.threshold = -0.005 # Threshold for ball detection 
+		self.heightToMl = list([ -2.74148619e-01,   4.30405210e+02]) # Vertical axis pixel height to mL conversion factor
 		self.saveImages = False
-		self.cylinderROI = [150,850,350,2000]
+		self.cylinderROI = [250,900,300,2000]
 		self.imagesDir = 'imageoutput'
 		self.maxFluidLevel = 450 # If we exceed this in MLs, shut things down.
 
@@ -235,9 +235,9 @@ class AutoPump():
 		self.returnPumpTime = 11*60 # Time in seconds to run the return motor to void the cylinder
 
 		#### Initialize system
-		GPIO.setmode(GPIO.BCM)
-		GPIO.setup(self.returnMotorPin, GPIO.OUT)
-                GPIO.output(self.returnMotorPin,GPIO.LOW)
+#		GPIO.setmode(GPIO.BCM)#
+#		GPIO.setup(self.returnMotorPin, GPIO.OUT)
+      #          GPIO.output(self.returnMotorPin,GPIO.LOW)
                 self.initializeRunVariables()
 
 		if not os.path.exists('/var/log/autopump'):
