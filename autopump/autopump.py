@@ -67,9 +67,10 @@ class AutoPump():
 		cylinder = self.img.crop(self.cylinderROI) #extents for image 
 		bluechan = cylinder.getNumpy()[:,:,0]
 		bluechan = bluechan.mean(axis=1)
-		smoothb = self.smooth(bluechan,window_len=50)
+#		smoothb = self.smooth(bluechan,window_len=50)
 		try:
-			ballheight = np.nonzero(np.diff(np.diff(smoothb)) < self.threshold)[0][0] #get first y value that exceeds thrshold 
+#			ballheight = np.nonzero(np.diff(np.diff(smoothb)) < self.threshold)[0][0] #get first y value that exceeds thrshold 
+			ballheight = np.nonzero(bluechan < self.threshold)[0][0]  #get first y value that exceeds thrshold 
 		except:
 			logging.warning('Machine vision failure: ball not detected')
 			ballheight = -1
@@ -220,10 +221,10 @@ class AutoPump():
 
 		# Machine Vision
 		self.sampleRate = 10 # How long to wait in seconds between 
-		self.threshold = -0.005 # Threshold for ball detection 
-		self.heightToMl = list([ -2.74148619e-01,   4.30405210e+02]) # Vertical axis pixel height to mL conversion factor
+		self.threshold = 175 # Threshold for ball detection 
+		self.heightToMl = list([ -2.80369637e-01,   4.61982548e+02]) # Vertical axis pixel height to mL conversion factor
 		self.saveImages = False
-		self.cylinderROI = [250,900,300,2000]
+		self.cylinderROI = [200,900,300,2000]
 		self.imagesDir = 'imageoutput'
 		self.maxFluidLevel = 450 # If we exceed this in MLs, shut things down.
 
