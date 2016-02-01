@@ -54,11 +54,14 @@ class AutoPump():
 
 	def captureImage(self):
 		logging.info('Initializing machine vision')
+		GPIO.output(self.lightPin,GPIO.HIGH)
+		time.sleep(1)
 		#take a picture 
 		#this goes to disk because the uv4l direct to SCV solution doesn't work on jessie: http://www.linux-projects.org/modules/sections/index.php?op=viewarticle&artid=14
 		sbp.call("raspistill -o /tmp/image.jpg", shell=True)
 		logging.info('Image acquired')
-
+		time.sleep(2)
+		GPIO.output(self.lightPin,GPIO.HIGH)
 
 	def processVision(self, imgfile='/tmp/image.jpg'):
 		logging.info('Processing machine vision')
@@ -227,7 +230,7 @@ class AutoPump():
 		self.cylinderROI = [200,900,300,2000]
 		self.imagesDir = 'imageoutput'
 		self.maxFluidLevel = 450 # If we exceed this in MLs, shut things down.
-
+		self.lightPin = 23
 		# Breath Normalization Parameters
 		self.humanBPM = 15 # For doing testrig to in-vivo calculation
 
@@ -237,6 +240,8 @@ class AutoPump():
 
 		#### Initialize system
 		GPIO.setmode(GPIO.BCM)#
+		GPIO.setup(self.lightPin, GPIO.OUT)
+		GPIO.output(self.lightPin, GPIO.LOW)
 		GPIO.setup(self.returnMotorPin, GPIO.OUT)
 		GPIO.output(self.returnMotorPin,GPIO.LOW)
 		self.initializeRunVariables()
