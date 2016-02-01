@@ -60,8 +60,8 @@ class AutoPump():
 		#this goes to disk because the uv4l direct to SCV solution doesn't work on jessie: http://www.linux-projects.org/modules/sections/index.php?op=viewarticle&artid=14
 		sbp.call("raspistill -o /tmp/image.jpg", shell=True)
 		logging.info('Image acquired')
-		time.sleep(2)
-		GPIO.output(self.lightPin,GPIO.HIGH)
+                GPIO.output(self.lightPin,GPIO.LOW) 
+                logging.info('turning off lights')
 
 	def processVision(self, imgfile='/tmp/image.jpg'):
 		logging.info('Processing machine vision')
@@ -223,14 +223,14 @@ class AutoPump():
 		self.breathTime = 0.25 # Time in seconds between inhale/exhale
 
 		# Machine Vision
-		self.sampleRate = 10 # How long to wait in seconds between 
+		self.sampleRate = 100 # How long to wait in seconds between 
 		self.threshold = 175 # Threshold for ball detection 
 		self.heightToMl = list([ -2.80369637e-01,   4.61982548e+02]) # Vertical axis pixel height to mL conversion factor
 		self.saveImages = False
 		self.cylinderROI = [200,900,300,2000]
 		self.imagesDir = 'imageoutput'
 		self.maxFluidLevel = 450 # If we exceed this in MLs, shut things down.
-		self.lightPin = 23
+		self.lightPin = 18
 		# Breath Normalization Parameters
 		self.humanBPM = 15 # For doing testrig to in-vivo calculation
 
